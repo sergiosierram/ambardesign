@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BeadArt from '../../components/BeadArt'
 import Icon from '../../components/Icons'
 import Wordmark from '../../components/Wordmark'
-import { PRODUCTS, ORDERS_SEED, CUSTOM_REQUESTS_SEED } from '../../data/products'
-import type { Product } from '../../types'
+import { fetchProducts, fetchAllOrders, fetchCustomRequests, updateStock } from '../../lib/db'
+import type { Product, Order, CustomRequest } from '../../types'
 
 interface Props {
   onLogout: () => void
@@ -108,17 +108,17 @@ function TableHeader({ cols }: { cols: string[] }) {
   )
 }
 
-function TabOverview() {
-  const totalRevenue = ORDERS_SEED.reduce((s, o) => s + o.total, 0)
-  const lowStock = PRODUCTS.filter(p => p.stock <= 5).length
+function TabOverview({ orders, requests, products }: { orders: Order[]; requests: CustomRequest[]; products: Product[] }) {
+  const totalRevenue = orders.reduce((a, o) => a + o.total, 0)
+  const lowStock = products.filter(p => p.stock <= 3 && p.stock > 0).length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        <KpiCard label="Total orders"    value={ORDERS_SEED.length}  sub="All time" />
-        <KpiCard label="Revenue"         value={`$${totalRevenue}`}  sub="Seed data" />
-        <KpiCard label="Custom requests" value={CUSTOM_REQUESTS_SEED.length} sub="Active" />
-        <KpiCard label="Low stock"       value={lowStock}            sub="≤5 units" />
+        <KpiCard label="Total orders"    value={orders.length}    sub="All time" />
+        <KpiCard label="Revenue"         value={`$${totalRevenue}`} sub="All time" />
+        <KpiCard label="Custom requests" value={requests.length}  sub="Active" />
+        <KpiCard label="Low stock"       value={lowStock}         sub="≤3 units" />
       </div>
 
       <div>
@@ -127,7 +127,7 @@ function TabOverview() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <TableHeader cols={['Order', 'Customer', 'Items', 'Total', 'Status', 'Date']} />
             <tbody>
-              {ORDERS_SEED.slice(0, 4).map((o, i) => (
+              {orders.slice(0, 4).map((o, i) => (
                 <tr key={o.id} style={{ background: i % 2 === 0 ? 'var(--paper)' : 'var(--cream)' }}>
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>{o.id}</td>
                   <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--ink)' }}>{o.user}</td>
@@ -145,7 +145,7 @@ function TabOverview() {
       <div>
         <SectionTitle>Recent custom requests</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {CUSTOM_REQUESTS_SEED.slice(0, 3).map(cr => (
+          {requests.slice(0, 3).map(cr => (
             <div key={cr.id} style={{
               background: 'var(--paper)',
               border: '1px solid var(--line)',
@@ -174,7 +174,7 @@ function TabOverview() {
   )
 }
 
-function TabOrders() {
+function TabOrders({ orders }: { orders: Order[] }) {
   return (
     <div>
       <SectionTitle>All orders</SectionTitle>
@@ -182,7 +182,7 @@ function TabOrders() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <TableHeader cols={['Order ID', 'Customer', 'Items', 'Total', 'Status', 'Date']} />
           <tbody>
-            {ORDERS_SEED.map((o, i) => (
+            {orders.map((o, i) => (
               <tr
                 key={o.id}
                 style={{ background: i % 2 === 0 ? 'var(--paper)' : 'var(--cream)', transition: 'background .1s' }}
@@ -204,12 +204,12 @@ function TabOrders() {
   )
 }
 
-function TabRequests() {
+function TabRequests({ requests }: { requests: CustomRequest[] }) {
   return (
     <div>
       <SectionTitle>Custom design requests</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {CUSTOM_REQUESTS_SEED.map(cr => (
+        {requests.map(cr => (
           <div key={cr.id} style={{
             background: 'var(--paper)',
             border: '1px solid var(--line)',
@@ -254,22 +254,28 @@ function TabRequests() {
   )
 }
 
-function TabStock() {
+function TabStock({ products }: { products: Product[] }) {
   const [stocks, setStocks] = useState<Record<string, number>>(
-    Object.fromEntries(PRODUCTS.map(p => [p.id, p.stock]))
+    Object.fromEntries(products.map(p => [p.id, p.stock]))
   )
   const [editing, setEditing] = useState<string | null>(null)
   const [editVal, setEditVal] = useState<string>('')
+
+  // Keep local stocks in sync if products prop changes (e.g. after initial load)
+  useEffect(() => {
+    setStocks(Object.fromEntries(products.map(p => [p.id, p.stock])))
+  }, [products])
 
   function startEdit(p: Product) {
     setEditing(p.id)
     setEditVal(String(stocks[p.id]))
   }
 
-  function commitEdit(id: string) {
+  async function commitEdit(id: string) {
     const n = parseInt(editVal, 10)
     if (!isNaN(n) && n >= 0) {
       setStocks(prev => ({ ...prev, [id]: n }))
+      await updateStock(id, n)
     }
     setEditing(null)
   }
@@ -278,8 +284,8 @@ function TabStock() {
     <div>
       <SectionTitle>Inventory</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        {PRODUCTS.map(p => {
-          const qty = stocks[p.id]
+        {products.map(p => {
+          const qty = stocks[p.id] ?? p.stock
           const isLow = qty <= 5
           return (
             <div key={p.id} style={{
@@ -480,6 +486,23 @@ function TabCustomers() {
 export default function AdminDashboard({ onLogout }: Props) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [products, setProducts] = useState<Product[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [requests, setRequests] = useState<CustomRequest[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetchProducts(),
+      fetchAllOrders(),
+      fetchCustomRequests(),
+    ]).then(([prods, ords, reqs]) => {
+      setProducts(prods)
+      setOrders(ords)
+      setRequests(reqs)
+      setLoading(false)
+    })
+  }, [])
 
   function handleLogout() {
     onLogout()
@@ -488,10 +511,10 @@ export default function AdminDashboard({ onLogout }: Props) {
 
   function renderContent() {
     switch (activeTab) {
-      case 'overview':   return <TabOverview />
-      case 'orders':     return <TabOrders />
-      case 'requests':   return <TabRequests />
-      case 'stock':      return <TabStock />
+      case 'overview':   return <TabOverview orders={orders} requests={requests} products={products} />
+      case 'orders':     return <TabOrders orders={orders} />
+      case 'requests':   return <TabRequests requests={requests} />
+      case 'stock':      return <TabStock products={products} />
       case 'analytics':  return <TabAnalytics />
       case 'customers':  return <TabCustomers />
     }
@@ -630,7 +653,20 @@ export default function AdminDashboard({ onLogout }: Props) {
             ambar design studio
           </p>
         </div>
-        {renderContent()}
+        {loading ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 200,
+            fontSize: 15,
+            color: 'var(--ink-mute)',
+          }}>
+            Loading…
+          </div>
+        ) : (
+          renderContent()
+        )}
       </main>
     </div>
   )

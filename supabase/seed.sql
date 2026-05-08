@@ -1,0 +1,73 @@
+-- Ambar Design — seed products
+-- Run after schema.sql
+
+insert into public.products (id, name, category, price, stock, tags, description, materials, palette_name, palette, pattern)
+values
+  ('p1',  'Margarita Hoops',      'Earrings',     28, 12, '{"Bestseller"}',
+   'Hand-stitched Miyuki Delica daisies on stainless steel hoops. Lightweight, hypoallergenic, made one pair at a time.',
+   'Miyuki Delica 11/0 · 24mm hoops · stainless steel posts', 'Honey & cream',
+   '["#C8843E","#F2DDC2","#FAF6F0","#A66828","#2A1F17"]',
+   '[[-1,-1,1,-1,1,-1,-1],[-1,1,0,0,0,1,-1],[1,0,0,2,0,0,1],[1,0,0,2,0,0,1],[1,0,0,2,0,0,1],[-1,1,0,0,0,1,-1],[-1,-1,1,-1,1,-1,-1]]'),
+  ('p2',  'Amapola Studs',        'Earrings',     22,  8, '{"New"}',
+   'Soft poppy studs in dusty rose and clay. Tiny, daily-wear, surprisingly bold.',
+   'Miyuki Delica 11/0 · sterling posts · 12mm', 'Rosy clay',
+   '["#D8A5A0","#FAF6F0","#B05E3C","#F2DEDB","#2A1F17"]',
+   '[[-1,-1,-1,1,-1,-1,-1],[-1,1,1,-1,1,1,-1],[1,-1,0,2,0,-1,1],[-1,-1,2,-1,2,-1,-1],[-1,-1,-1,0,-1,-1,-1],[-1,-1,2,-1,2,-1,-1],[-1,-1,-1,-1,-1,-1,-1]]'),
+  ('p3',  'Lavanda Choker',       'Necklaces',    64,  6, '{"Signature"}',
+   'A single strand of lavender-and-cream Miyuki seed beads. Adjustable from 14–16".',
+   'Miyuki seed 11/0 · gold-fill clasp · 14–16"', 'Lavender field',
+   '["#9F8FC9","#EDE7F5","#6E5DA0","#FAF6F0","#C8843E"]',
+   '[[1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2]]'),
+  ('p4',  'Cielo Necklace',       'Necklaces',    78,  4, '{}',
+   'Twilight strand alternating dusk lavender and cream. 18" length.',
+   'Miyuki seed 11/0 · gold-fill clasp · 18"', 'Dusk berry',
+   '["#6E5DA0","#9F8FC9","#FAF6F0","#D8A5A0","#2A1F17"]',
+   '[[0,1,0,3,0,1,0,3,0,1,0,3,0,1,0,3]]'),
+  ('p5',  'Corazón Ring',         'Rings',        18, 14, '{"Bestseller"}',
+   'A tiny woven heart on a stretch band. Sized 6–8.',
+   'Miyuki Delica 11/0 · elastic · adjustable 6–8', 'Rosy clay',
+   '["#D8A5A0","#FAF6F0","#B05E3C","#F2DEDB","#2A1F17"]',
+   '[[-1,1,1,-1,1,1,-1],[1,0,0,1,0,0,1],[1,0,0,0,0,0,1],[1,0,0,0,0,0,1],[-1,1,0,0,0,1,-1],[-1,-1,1,0,1,-1,-1],[-1,-1,-1,1,-1,-1,-1]]'),
+  ('p6',  'Estrella Ring',        'Rings',        20,  9, '{}',
+   'A six-pointed star woven on a stretch band. Sized 6–8.',
+   'Miyuki Delica 11/0 · elastic · adjustable 6–8', 'Honey cream',
+   '["#F2DDC2","#C8843E","#FAF6F0","#A66828","#2A1F17"]',
+   '[[-1,-1,-1,1,-1,-1,-1],[-1,1,1,0,1,1,1],[1,1,1,0,1,1,1],[0,1,1,1,1,1,0],[1,0,1,1,1,0,1],[-1,1,0,-1,0,1,-1],[-1,1,-1,-1,-1,1,-1]]'),
+  ('p7',  'Olita Bracelet',       'Bracelets',    26, 11, '{"New"}',
+   'Mint-and-cream wave strand on stretch cord. Stacks beautifully.',
+   'Miyuki seed 11/0 · stretch cord · 6.5–7"', 'Mint frost',
+   '["#B8D6C7","#FAF6F0","#5C8A6C","#9F8FC9","#2A1F17"]',
+   '[[1,0,1,0,2,1,0,1,0,2,1,0,1,0,2,1]]'),
+  ('p8',  'Sol Bracelet',         'Bracelets',    26,  7, '{}',
+   'Amber-and-cream pattern on stretch cord.',
+   'Miyuki seed 11/0 · stretch cord · 6.5–7"', 'Honey & cream',
+   '["#C8843E","#F2DDC2","#FAF6F0","#A66828","#2A1F17"]',
+   '[[1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2]]'),
+  ('p9',  'Mariposa Charm',       'Keychains',    16,  5, '{}',
+   'A woven butterfly charm on a brass keyring or bag clip.',
+   'Miyuki Delica 11/0 · brass keyring · 4cm', 'Sage meadow',
+   '["#8FA08A","#FAF6F0","#C8843E","#E0E8DC","#2A1F17"]',
+   '[[1,1,-1,-1,-1,1,1],[1,0,1,-1,1,0,1],[1,0,0,1,0,0,1],[-1,-1,-1,0,-1,-1,-1],[1,0,0,1,0,0,1],[1,0,1,-1,1,0,1],[1,1,-1,-1,-1,1,1]]'),
+  ('p10', 'Sonrisa Phone Charm',  'Phone charms', 14, 18, '{"Bestseller"}',
+   'A grin to dangle off your case. Comes with strap.',
+   'Miyuki Delica 11/0 · woven strap · 7cm drop', 'Honey cream',
+   '["#F2DDC2","#C8843E","#FAF6F0","#A66828","#2A1F17"]',
+   '[[-1,1,1,1,1,1,-1],[1,1,0,1,0,1,1],[1,1,0,1,0,1,1],[1,0,0,0,0,0,1],[1,1,0,0,0,1,1],[1,0,1,1,1,0,1],[-1,1,1,1,1,1,-1]]'),
+  ('p11', 'Florcita Phone Charm', 'Phone charms', 14,  0, '{"Sold out"}',
+   'Lavender bloom for your phone. Restock May 28.',
+   'Miyuki Delica 11/0 · woven strap · 7cm drop', 'Lavender field',
+   '["#9F8FC9","#EDE7F5","#6E5DA0","#FAF6F0","#C8843E"]',
+   '[[-1,-1,-1,1,-1,-1,-1],[-1,1,1,-1,1,1,-1],[1,-1,0,2,0,-1,1],[-1,-1,2,-1,2,-1,-1],[-1,-1,-1,0,-1,-1,-1],[-1,-1,2,-1,2,-1,-1],[-1,-1,-1,-1,-1,-1,-1]]'),
+  ('p12', 'Cocoa Necklace',       'Necklaces',    58,  9, '{}',
+   'Mocha-and-milk strand. Warm and unfussy.',
+   'Miyuki seed 11/0 · gold-fill clasp · 16"', 'Mocha milk',
+   '["#C9A37A","#FAF6F0","#7A5638","#2A1F17","#E8DFD2"]',
+   '[[0,1,0,3,0,1,0,3,0,1,0,3,0,1,0,3]]')
+on conflict (id) do update set
+  stock = excluded.stock,
+  tags  = excluded.tags;
+
+-- To make a user admin (run after they sign up):
+-- update public.profiles set role = 'admin' where id = (
+--   select id from auth.users where email = 'your@email.com'
+-- );

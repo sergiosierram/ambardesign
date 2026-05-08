@@ -17,9 +17,8 @@ import AdminDashboard from './screens/admin/AdminDashboard'
 import type { CartItem, Product } from './types'
 
 function AppShell() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [cart, setCart] = useState<CartItem[]>([])
-  const [isAdmin, setIsAdmin] = useState(false)
 
   function addToCart(p: Product, qty: number) {
     setCart(prev => {
@@ -46,8 +45,8 @@ function AppShell() {
           <Route path="/signup" element={<AuthScreen mode="signup" />} />
           <Route path="/account" element={user ? <AccountScreen /> : <Navigate to="/login" />} />
           <Route path="/about" element={<AboutScreen />} />
-          <Route path="/admin-login" element={<AdminLoginScreen onLogin={() => setIsAdmin(true)} />} />
-          <Route path="/admin" element={isAdmin ? <AdminDashboard onLogout={() => setIsAdmin(false)} /> : <Navigate to="/admin-login" />} />
+          <Route path="/admin-login" element={<AdminLoginScreen />} />
+          <Route path="/admin" element={isAdmin ? <AdminDashboard onLogout={() => {}} /> : <Navigate to="/admin-login" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

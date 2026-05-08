@@ -1,26 +1,36 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Wordmark from '../../components/Wordmark'
+import { useAuth } from '../../contexts/AuthContext'
 
-interface Props {
-  onLogin: () => void
-}
-
-export default function AdminLoginScreen({ onLogin }: Props) {
+export default function AdminLoginScreen() {
   const navigate = useNavigate()
+  const { signIn } = useAuth()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [code, setCode] = useState('')
+  const [twoFa, setTwoFa] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email || !password) {
       setError('Please enter your credentials.')
       return
     }
     setError('')
-    onLogin()
+    setLoading(true)
+    const { error: authError, role } = await signIn(email, password)
+    setLoading(false)
+    if (authError) {
+      setError(authError)
+      return
+    }
+    if (role !== 'admin') {
+      setError('Access denied. Admin only.')
+      return
+    }
     navigate('/admin')
   }
 
@@ -161,8 +171,8 @@ export default function AdminLoginScreen({ onLogin }: Props) {
             </label>
             <input
               type="text"
-              value={code}
-              onChange={e => setCode(e.target.value)}
+              value={twoFa}
+              onChange={e => setTwoFa(e.target.value)}
               placeholder="6-digit code"
               inputMode="numeric"
               maxLength={6}
@@ -191,6 +201,7 @@ export default function AdminLoginScreen({ onLogin }: Props) {
 
           <button
             type="submit"
+            disabled={loading}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -206,13 +217,14 @@ export default function AdminLoginScreen({ onLogin }: Props) {
               fontSize: 14,
               fontWeight: 700,
               color: 'white',
-              cursor: 'pointer',
-              transition: 'filter .15s',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.65 : 1,
+              transition: 'filter .15s, opacity .15s',
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)' }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = '' }}
           >
-            Enter studio
+            {loading ? 'Signing in…' : 'Enter studio'}
           </button>
         </form>
 

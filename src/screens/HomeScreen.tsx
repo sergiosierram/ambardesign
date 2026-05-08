@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BeadArt from '../components/BeadArt'
 import Icon from '../components/Icons'
 import ProductCard from '../components/ProductCard'
-import { PRODUCTS, PALETTES, PATTERNS } from '../data/products'
+import { PALETTES, PATTERNS } from '../data/products'
+import { fetchProducts } from '../lib/db'
 import type { Product, CartItem } from '../types'
 
 interface Props {
@@ -89,9 +91,18 @@ const BEAD_TILES_CTA = [
 
 export default function HomeScreen({ addToCart }: Props) {
   const navigate = useNavigate()
+  const [products, setProducts] = useState<Product[]>([])
+  const [dbLoading, setDbLoading] = useState(true)
 
-  const firstFour = PRODUCTS.slice(0, 4)
-  const bestsellers = PRODUCTS.filter(p => p.tags.includes('Bestseller'))
+  useEffect(() => {
+    fetchProducts().then(data => {
+      setProducts(data)
+      setDbLoading(false)
+    })
+  }, [])
+
+  const featured = products.slice(0, 4)
+  const bestsellers = products.filter(p => p.tags.includes('Bestseller'))
 
   return (
     <div>
@@ -213,20 +224,22 @@ export default function HomeScreen({ addToCart }: Props) {
         </div>
       </section>
 
-      <section style={{ padding: '80px 0', background: 'var(--cream-2)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>
-          <SectionHead
-            title="The collection"
-            sub="Each piece woven by hand, never twice the same."
-            link={{ label: 'View all', href: '/shop' }}
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {firstFour.map(p => (
-              <ProductCard key={p.id} p={p} />
-            ))}
+      {!dbLoading && (
+        <section style={{ padding: '80px 0', background: 'var(--cream-2)' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>
+            <SectionHead
+              title="The collection"
+              sub="Each piece woven by hand, never twice the same."
+              link={{ label: 'View all', href: '/shop' }}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+              {featured.map(p => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section style={{ padding: '80px 0', background: 'var(--brand-soft)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>
@@ -275,20 +288,22 @@ export default function HomeScreen({ addToCart }: Props) {
         </div>
       </section>
 
-      <section style={{ padding: '80px 0', background: 'var(--cream)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>
-          <SectionHead
-            title="Most loved"
-            sub="The pieces our customers keep coming back for."
-            link={{ label: 'See all bestsellers', href: '/shop' }}
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {bestsellers.map(p => (
-              <ProductCard key={p.id} p={p} />
-            ))}
+      {!dbLoading && (
+        <section style={{ padding: '80px 0', background: 'var(--cream)' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>
+            <SectionHead
+              title="Most loved"
+              sub="The pieces our customers keep coming back for."
+              link={{ label: 'See all bestsellers', href: '/shop' }}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+              {bestsellers.map(p => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section style={{ padding: '80px 0', background: 'var(--cream-2)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px' }}>

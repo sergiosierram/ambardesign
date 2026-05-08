@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BeadArt from '../components/BeadArt'
 import ProductCard from '../components/ProductCard'
-import { PRODUCTS, CATEGORIES } from '../data/products'
+import { CATEGORIES } from '../data/products'
+import { fetchProducts } from '../lib/db'
 import type { Product } from '../types'
 
 type SortOption = 'Featured' | 'Price · low' | 'Price · high' | 'New'
@@ -11,8 +12,25 @@ export default function CatalogScreen() {
   useNavigate()
   const [cat, setCat] = useState<string>('All')
   const [sort, setSort] = useState<SortOption>('Featured')
+  const [products, setProducts] = useState<Product[]>([])
+  const [dbLoading, setDbLoading] = useState(true)
 
-  const filtered: Product[] = PRODUCTS.filter(p =>
+  useEffect(() => {
+    fetchProducts().then(data => {
+      setProducts(data)
+      setDbLoading(false)
+    })
+  }, [])
+
+  if (dbLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <p style={{ fontSize: 16, color: 'var(--ink-soft)' }}>Loading designs…</p>
+      </div>
+    )
+  }
+
+  const filtered: Product[] = products.filter(p =>
     cat === 'All' ? true : p.cat === cat
   )
 
@@ -50,7 +68,7 @@ export default function CatalogScreen() {
             All designs
           </h1>
           <p style={{ fontSize: 15, color: 'var(--ink-soft)' }}>
-            {PRODUCTS.length} ready-made pieces · woven by hand
+            {products.length} ready-made pieces · woven by hand
           </p>
         </div>
 

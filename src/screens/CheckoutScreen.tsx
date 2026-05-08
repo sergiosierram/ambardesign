@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import BeadArt from '../components/BeadArt'
 import Icon from '../components/Icons'
 import type { CartItem, User } from '../types'
+import { createOrder } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Props {
   cart: CartItem[]
@@ -125,6 +127,7 @@ function CheckoutSection({ num, title, open, disabled, summary, onEdit, children
 
 export default function CheckoutScreen({ cart, setCart, user }: Props) {
   const navigate = useNavigate()
+  const { user: authUser } = useAuth()
   const [step, setStep] = useState<Step>('contact')
   const [email, setEmail] = useState(user?.email ?? '')
   const [newsletter, setNewsletter] = useState(false)
@@ -139,6 +142,7 @@ export default function CheckoutScreen({ cart, setCart, user }: Props) {
   const [card, setCard] = useState<CardData>({ number: '', expiry: '', cvc: '', name: '' })
   const [paying, setPaying] = useState(false)
   const [done, setDone] = useState(false)
+  const [orderId, setOrderId] = useState('#A-1285')
 
   const subtotal = cart.reduce((sum, ci) => sum + ci.p.price * ci.qty, 0)
   const shippingCost = shippingOpt === 'express' ? 18 : subtotal >= 60 ? 0 : 5.9
@@ -149,10 +153,15 @@ export default function CheckoutScreen({ cart, setCart, user }: Props) {
 
   async function handlePay() {
     setPaying(true)
-    await new Promise(r => setTimeout(r, 1400))
-    setCart([])
+    const id = await createOrder(
+      authUser?.id || 'guest',
+      cart.map(i => ({ productId: i.p.id, qty: i.qty, price: i.p.price })),
+      total
+    )
+    setOrderId(id || '#A-1285')
     setPaying(false)
     setDone(true)
+    setCart([])
   }
 
   if (done) {
@@ -184,7 +193,7 @@ export default function CheckoutScreen({ cart, setCart, user }: Props) {
             Thank you, {displayName}.
           </p>
           <p style={{ fontSize: 15, color: 'var(--ink-soft)' }}>
-            Your order <span style={{ fontWeight: 600 }}>#A-1285</span> is confirmed.
+            Your order <span style={{ fontWeight: 600 }}>{orderId}</span> is confirmed.
           </p>
           <p style={{ fontSize: 14, color: 'var(--ink-mute)', marginTop: 4 }}>
             We'll email {email} when it ships.

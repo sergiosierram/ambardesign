@@ -1,39 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BeadArt from '../components/BeadArt'
 import Icon from '../components/Icons'
 import ProductCard from '../components/ProductCard'
 import { PRODUCTS } from '../data/products'
 import { useAuth } from '../contexts/AuthContext'
+import { fetchOrders, fetchCustomRequests } from '../lib/db'
+import type { Order, CustomRequest } from '../types'
 
 type Tab = 'orders' | 'customs' | 'saved' | 'profile' | 'addresses'
-
-interface MockOrder {
-  id: string
-  date: string
-  total: number
-  status: string
-  items: typeof PRODUCTS
-}
-
-interface MockCustom {
-  id: string
-  date: string
-  shape: string
-  est: string
-  status: string
-}
-
-const MOCK_ORDERS: MockOrder[] = [
-  { id: '#A-1285', date: 'May 8', total: 50, status: 'paid', items: [PRODUCTS[0], PRODUCTS[2]] },
-  { id: '#A-1282', date: 'May 3', total: 102, status: 'packed', items: [PRODUCTS[1], PRODUCTS[4], PRODUCTS[6]] },
-  { id: '#A-1279', date: 'Apr 28', total: 44, status: 'delivered', items: [PRODUCTS[3], PRODUCTS[5]] },
-]
-
-const MOCK_CUSTOMS: MockCustom[] = [
-  { id: '#CR-218', date: 'May 7', shape: 'Flower', est: '$48–$60', status: 'in-progress' },
-  { id: '#CR-214', date: 'Apr 30', shape: 'Heart', est: '$22–$30', status: 'quoted' },
-]
 
 function statusChipClass(status: string): string {
   if (status === 'paid' || status === 'delivered') return 'chip chip-sage'
@@ -56,8 +30,20 @@ export default function AccountScreen() {
   const [profileName, setProfileName] = useState(user?.name ?? '')
   const [profileEmail, setProfileEmail] = useState(user?.email ?? '')
   const [profilePhone, setProfilePhone] = useState('')
+  const [orders, setOrders] = useState<Order[]>([])
+  const [customs, setCustoms] = useState<CustomRequest[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
 
   const firstName = (user?.name ?? 'there').split(' ')[0]
+
+  useEffect(() => {
+    if (!user) return
+    Promise.all([fetchOrders(user.id), fetchCustomRequests(user.id)]).then(([o, c]) => {
+      setOrders(o)
+      setCustoms(c)
+      setOrdersLoading(false)
+    })
+  }, [user])
 
   async function handleSignOut() {
     await signOut()
@@ -65,8 +51,8 @@ export default function AccountScreen() {
   }
 
   const NAV_ITEMS: { key: Tab; label: string; count?: number }[] = [
-    { key: 'orders', label: 'Orders', count: MOCK_ORDERS.length },
-    { key: 'customs', label: 'Custom requests', count: MOCK_CUSTOMS.length },
+    { key: 'orders', label: 'Orders', count: orders.length },
+    { key: 'customs', label: 'Custom requests', count: customs.length },
     { key: 'saved', label: 'Saved designs', count: 4 },
     { key: 'profile', label: 'Profile' },
     { key: 'addresses', label: 'Addresses' },
@@ -147,59 +133,46 @@ export default function AccountScreen() {
           {tab === 'orders' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <h2 className="serif" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 8 }}>Orders</h2>
-              {MOCK_ORDERS.map(order => (
-                <div key={order.id} className="card" style={{ padding: 24 }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                    marginBottom: 16,
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{order.id}</span>
-                        <span className={statusChipClass(order.status)}>
-                          {statusLabel(order.status)}
+              {ordersLoading ? (
+                <p style={{ fontSize: 14, color: 'var(--ink-soft)' }}>Loading…</p>
+              ) : (
+                orders.map(order => (
+                  <div key={order.id} className="card" style={{ padding: 24 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: 16,
+                      flexWrap: 'wrap',
+                      marginBottom: 16,
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{order.id}</span>
+                          <span className={statusChipClass(order.status)}>
+                            {statusLabel(order.status)}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+                          {order.date} · {order.items} {order.items === 1 ? 'item' : 'items'}
                         </span>
                       </div>
-                      <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                        {order.date} · {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                      <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>
+                        ${order.total.toFixed(2)}
                       </span>
                     </div>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>
-                      ${order.total.toFixed(2)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    {order.items.map(p => (
-                      <div
-                        key={p.id}
-                        style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: 'var(--r-sm)',
-                          background: 'var(--cream-2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          overflow: 'hidden',
-                        }}
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ marginLeft: 'auto' }}
+                        onClick={() => navigate('/shop')}
                       >
-                        <BeadArt pattern={p.pattern} palette={p.palette} size={40} />
-                      </div>
-                    ))}
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ marginLeft: 'auto' }}
-                      onClick={() => navigate('/shop')}
-                    >
-                      Buy again
-                    </button>
+                        Buy again
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
 
@@ -215,24 +188,8 @@ export default function AccountScreen() {
                   Start new custom
                 </button>
               </div>
-              {MOCK_CUSTOMS.map(cr => (
+              {customs.map(cr => (
                 <div key={cr.id} className="card" style={{ padding: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
-                  <div style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 'var(--r-md)',
-                    background: 'var(--lavender-soft)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <BeadArt
-                      pattern={cr.shape === 'Flower' ? PRODUCTS[1].pattern : PRODUCTS[4].pattern}
-                      palette={PRODUCTS[cr.shape === 'Flower' ? 1 : 4].palette}
-                      size={52}
-                    />
-                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                       <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{cr.id}</span>
@@ -245,7 +202,9 @@ export default function AccountScreen() {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>{cr.est}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>
+                      {cr.est ? `$${cr.est}` : '—'}
+                    </div>
                     <div style={{ fontSize: 12, color: 'var(--ink-mute)', marginTop: 2 }}>estimate</div>
                   </div>
                 </div>

@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase, isConfigured } from '../lib/supabase'
+import { fetchProfile } from '../lib/db'
 import type { User as AppUser } from '../types'
 
 interface AuthCtx {
   user: AppUser | null
+  isAdmin: boolean
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signIn: (email: string, password: string) => Promise<{ error: string | null; role: string | null }>
   signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -16,31 +18,36 @@ const Ctx = createContext<AuthCtx | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  async function loadUser(id: string, email: string, metaName?: string): Promise<string> {
+    const profile = isConfigured ? await fetchProfile(id) : null
+    const role = profile?.role || 'customer'
+    const name = profile?.name || metaName || email.split('@')[0]
+    setUser({ id, email, name, role: (role as AppUser['role']) })
+    setIsAdmin(role === 'admin')
+    return role
+  }
 
   useEffect(() => {
     if (!isConfigured) { setLoading(false); return }
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (data.session?.user) {
-        setUser({
-          id: data.session.user.id,
-          email: data.session.user.email!,
-          name: data.session.user.user_metadata?.name || data.session.user.email!.split('@')[0],
-        })
+        const u = data.session.user
+        await loadUser(u.id, u.email!, u.user_metadata?.name)
       }
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name || session.user.email!.split('@')[0],
-        })
+        const u = session.user
+        await loadUser(u.id, u.email!, u.user_metadata?.name)
       } else {
         setUser(null)
+        setIsAdmin(false)
       }
     })
 
@@ -50,10 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signIn(email: string, password: string) {
     if (!isConfigured) {
       setUser({ id: 'mock', email, name: email.split('@')[0] })
-      return { error: null }
+      return { error: null, role: 'customer' }
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error: error?.message || null }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !data.user) return { error: error?.message || null, role: null }
+    const role = await loadUser(data.user.id, data.user.email!, data.user.user_metadata?.name)
+    return { error: null, role }
   }
 
   async function signUp(email: string, password: string, name: string) {
@@ -85,10 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  function setMockUser(u: AppUser | null) { setUser(u) }
+  function setMockUser(u: AppUser | null) { setUser(u); setIsAdmin(u?.role === 'admin') }
 
   return (
-    <Ctx.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, setMockUser }}>
+    <Ctx.Provider value={{ user, isAdmin, loading, signIn, signUp, signOut, signInWithGoogle, setMockUser }}>
       {children}
     </Ctx.Provider>
   )
