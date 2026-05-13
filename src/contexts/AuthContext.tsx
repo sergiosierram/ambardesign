@@ -16,6 +16,10 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null)
 
+function getAppRedirectUrl() {
+  return new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -90,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/ambardesign/' },
+      options: { redirectTo: getAppRedirectUrl() },
     })
   }
 
